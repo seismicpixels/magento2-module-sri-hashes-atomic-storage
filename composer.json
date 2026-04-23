@@ -1,0 +1,19 @@
+{
+    "name": "seismicpixels/magento2-module-sri-hashes-atomic-storage",
+    "description": "Atomic, self-healing storage for Magento CSP sri-hashes.json (Subresource Integrity map)",
+    "type": "magento2-module",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "magento/framework": "*",
+        "magento/module-csp": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "SeismicPixels\\SriHashesAtomicStorage\\": ""
+        }
+    }
+}
