@@ -1,6 +1,8 @@
 # Magento 2: Atomic SRI hashes storage (`sri-hashes.json`)
 
-Small Magento 2 module that replaces `Magento\Csp\Model\SubresourceIntegrity\StorageInterface` with an implementation that:
+Small Magento 2 module that replaces `Magento\Csp\Model\SubresourceIntegrity\StorageInterface` with a safe, atomic implementation.
+
+**Read the full technical breakdown:** [How Atomic Storage fixes Magento 2 Checkout Corruption](https://seismicpixels.com/magento-2-broken-checkout-sri-hashes-json-corruption-fix/)
 
 1. **Writes safely** — Full payload is written to a unique temp file next to `sri-hashes.json`, then published with a **single `rename()`** so the live file is not a growing half-write, and readers do not see a gap where the target was deleted before the new file appears (Linux: atomic replace on the same filesystem).
 2. **Recovers from corruption** — On `load()`, if the file is not valid JSON, it is **removed** after logging so the next request can rebuild instead of breaking checkout with a parse error.
@@ -62,10 +64,22 @@ Adjust `url` to where you cloned the package. Run `composer update`, then enable
 - Remove any other **preference** for `Magento\Csp\Model\SubresourceIntegrity\StorageInterface` (for example a duplicate in another custom module) so only one implementation applies.
 - If you previously shipped the same logic under another module name, **disable the old module** or remove its `di.xml` preference to avoid two modules fighting for the same interface.
 
+## Symptoms addressed
+
+This module resolves the following error frequently seen on the checkout page:
+`Exception: Unable to unserialize value. Error: Syntax error in vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php`
+```Trace:
+#1 Magento\Csp\Model\SubresourceIntegrityRepository->getData() called at [vendor/magento/module-csp/Model/SubresourceIntegrityRepository.php:86]
+#2 Magento\Csp\Model\SubresourceIntegrityRepository->getByPath() called at [vendor/magento/module-csp/Plugin/AddDefaultPropertiesToGroupPlugin.php:91]
+#3 Magento\Csp\Plugin\AddDefaultPropertiesToGroupPlugin->beforeGetFilteredProperties() called at [vendor/magento/framework/Interception/Interceptor.php:121]
+#4 Magento\Framework\View\Asset\GroupedCollection\Interceptor->Magento\Framework\Interception\{closure}() called at [vendor/magento/framework/Interception/Interceptor.php:153]
+#5 Magento\Framework\View\Asset\GroupedCollection\Interceptor->___callPlugins() called at [generated/code/Magento/Framework/View/Asset/GroupedCollection/Interceptor.php:41]
+```
+
 ## License
 
-Use and modify at your own discretion; align the license with your publishing policy when you open-source the repo (for example MIT or OSL-3.0 to match Magento ecosystem norms).
+[MIT](LICENSE) © [Seismic Pixels](https://seismicpixels.com)
 
-## Namespace / Packagist
+## Contribution
 
-The code uses the `SeismicPixels` vendor prefix. For your own GitHub project you may rename the module and PHP namespace in a single pass (`SeismicPixels` → `YourVendor`) and adjust `registration.php`, `etc/module.xml`, `etc/di.xml`, and the `AtomicFile` namespace accordingly.
+Feel free to open an issue or submit a pull request if you encounter edge cases with specific filesystem permissions or specialized CSP configurations.
